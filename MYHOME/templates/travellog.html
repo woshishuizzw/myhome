@@ -1,0 +1,173 @@
+{% load static %}
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>旅行日志</title>
+    <script src="{% static 'js/jquery-1.11.1.min.js' %}"></script>
+    <script src="{% static 'js/echarts.min.js' %}"></script>
+    <script src="{% static 'js/china.js' %}"></script>
+</head>
+
+<body>
+
+<div id="opts" style="position: absolute;z-index: 999999;">
+
+</div>
+<div id="container" style="height: 700px;width:1000px;background:white;margin:1px 0 0;"></div>
+
+<script type="text/javascript">
+    // 全国省份列表
+    var dataMap = [{name: '北京'}, {name: '天津',}, {name: '上海'}, {name: '重庆'}, {name: '河北'}, {name: '河南'}, {name: '云南'}, {name: '辽宁'}, {name: '黑龙江'}, {name: '湖南'}, {name: '安徽'}, {name: '山东'},
+        {name: '新疆'}, {name: '江苏'}, {name: '浙江'}, {name: '江西'}, {name: '湖北'}, {name: '广西'}, {name: '甘肃'}, {name: '山西'}, {name: '内蒙古'}, {name: '陕西'}, {name: '吉林'}, {name: '福建'}, {name: '贵州'},
+        {name: '广东'}, {name: '青海'}, {name: '西藏'}, {name: '四川'}, {name: '宁夏'}, {name: '海南'}, {name: '台湾'}, {name: '香港'}, {name: '澳门'}]
+    // 需要在页面上直接标记出来的城市
+    var specialMap = [];
+    var jhMap = [];
+    var aaa = JSON.parse('{{ data |safe }}');
+    for (cit in aaa) {
+        specialMap.push(cit)
+    }
+    var jhs = JSON.parse('{{ data1 |safe }}');
+    for (jh in jhs) {
+        jhMap.push(jh)
+    }
+    // 对dataMap进行处理，使其可以直接在页面上展示
+    for (var i = 0; i < jhMap.length; i++) {
+        for (var j = 0; j < dataMap.length; j++) {
+            if (jhMap[i] == dataMap[j].name) {
+                {#dataMap[j].selected = true;#}
+                dataMap[j].itemStyle = {
+                    areaColor: '#eca2cd'
+                };
+                {#console.log(dataMap[j])#}
+                break;
+            }
+        }
+    }
+    for (var i = 0; i < specialMap.length; i++) {
+        for (var j = 0; j < dataMap.length; j++) {
+            if (specialMap[i] == dataMap[j].name) {
+                {#dataMap[j].selected = true;#}
+                dataMap[j].itemStyle = {
+                    areaColor: '#e51fee'
+                };
+                {#console.log(dataMap[j])#}
+                break;
+            }
+        }
+    }
+    // 绘制图表，准备数据
+    var option = {
+        tooltip: {
+            formatter: function (params) {
+                info = '<p style="font-size:18px">' + params.name + '</p><p style="font-size:14px">点击添加旅行计划</p>';
+                var pa = specialMap.indexOf(params.name);
+                if (pa != -1) {
+                    info = '<p style="font-size:18px">' + params.name + '</p><p style="font-size:14px">' + aaa[params.name] + '</p>'
+                }
+                var ps = jhMap.indexOf(params.name);
+                if (ps != -1) {
+                    info = '<p style="font-size:18px">' + '计划城市:' + params.name + '</p><p style="font-size:14px">' + jhs[params.name] + '</p>'
+                }
+                return info;
+            },
+            backgroundColor: "#ff7f50",//提示标签背景颜色
+            textStyle: {color: "#fff"} //提示标签字体颜色
+        },
+        series: [
+            {
+                name: '中国',
+                type: 'map',
+                mapType: 'china',
+                {#selectedMode: 'multiple',#}
+                label: {
+                    normal: {
+                        show: true,//显示省份标签
+                        // textStyle:{color:"#c71585"}//省份标签字体颜色
+                    },
+                    emphasis: {
+                        show: true,//对应的鼠标悬浮效果
+                        textStyle: {color: "#ec171d"}
+                    }
+                },
+                itemStyle: {
+                    normal: {
+                        borderWidth: .4,//区域边框宽度
+                        // borderColor: '#009fe8',//区域边框颜色
+                        // areaColor:"#ffefd5",//区域颜色
+                    },
+                    emphasis: {
+                        borderWidth: .4,
+                        borderColor: '#4b0082',
+                        areaColor: "#eca2cd",
+                    }
+                },
+                data: dataMap
+                {#data: [#}
+                {#    {#}
+                {#        name: specialMap[0], value: 0,#}
+                {#        itemStyle: {#}
+                {#            areaColor: '#ee1526'#}
+                {#        }#}
+                {#    },#}
+                {##}
+                {##}
+                {#    {#}
+                {#        name: '天津', value: 0,#}
+                {#        itemStyle: {#}
+                {#            areaColor: '#e51fee'#}
+                {#        },#}
+                {#    },#}
+                {#]#}
+            }
+        ]
+    };
+    //初始化echarts实例
+    var myChart = echarts.init(document.getElementById('container'));
+    //使用制定的配置项和数据显示图表
+    myChart.setOption(option);
+    myChart.on('click', function (t) {
+        var a = specialMap.indexOf(t.name);
+        var e = document.getElementById('memo');
+        if (e) {
+            document.getElementById("opts").removeChild(e);
+            var b = document.getElementById('but');
+            document.getElementById("opts").removeChild(b);
+            var se = document.getElementById('sel');
+            document.getElementById("opts").removeChild(se);
+        }
+        if (a == -1) {
+            $("#opts").append("<select id='sel'><option value='2'>添加旅行计划</option><option value='1'>添加旅行日记</option></select>");
+            $("#opts").append("<textarea  id=\"memo\"  cols=\"30\" rows=\"10\"></textarea>");
+            $("#opts").append("<button id='but' >提交</button>");
+            $("#but").click(function () {
+                var memo = $('#memo').val();
+                var ss = $("#sel option:checked").val()
+                data = {}
+                data[t.name] = memo + '&' + ss
+                $.ajax({
+                    cache: false,
+                    type: "POST",
+                    url: "{% url 'travellog' %}" ,
+                    traditional: true,  //加上此项可以传数组
+                    dataType: 'json',
+                    async: true,
+                    data: data,
+                    success: function (data) {
+                    },
+                    beforeSend: function (xhr) {
+                        xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                    }
+                });
+               e
+                 setTimeout(function(){window.location.reload()},1000);
+            })
+        }
+    });
+</script>
+
+
+</body>
+</html>
